@@ -67,13 +67,13 @@ internal open class AspectJCompileTask : AbstractCompile() {
                     "type" to AspectJCompileTask::class.java
             )
 
-            val classpathFiles = classpath()
             val sources = findAjSourcesForVariant(project, variantName)
             val task = project.task(options, taskName, closureOf<AspectJCompileTask> task@ {
                 destinationDir = obtainBuildDirectory(android)
                 aspectJWeaver = AspectJWeaver(project)
 
-                classpath = classpathFiles
+                classpath = classpath(true)
+                doFirst { classpath += javaCompiler.classpath }
                 findCompiledAspectsInClasspath(this, config.includeAspectsFromJar)
                 source(sources)
 
@@ -107,7 +107,7 @@ internal open class AspectJCompileTask : AbstractCompile() {
 
             // javaCompile.classpath does not contain exploded-aar/**/jars/*.jars till first run
             javaCompiler.doLast {
-                task.classpath = classpath()
+                task.classpath = classpath(true)
                 findCompiledAspectsInClasspath(task, config.includeAspectsFromJar)
             }
 
@@ -127,11 +127,10 @@ internal open class AspectJCompileTask : AbstractCompile() {
             }
         }
 
-        private fun classpath(): FileCollection = try {
-            project.files(javaCompiler.classpath.files + javaCompiler.destinationDir)
-        } catch (e: Throwable) {
-            ClasspathFileCollection(setOf(javaCompiler.destinationDir))
-        }
+        private fun classpath(withJavaCp: Boolean): FileCollection =
+                ClasspathFileCollection(setOf(javaCompiler.destinationDir)).apply {
+                    if (withJavaCp) plus(javaCompiler.classpath)
+                }
 
         private fun findCompiledAspectsInClasspath(task: AspectJCompileTask, aspectsFromJar: Collection<String>) {
             val classpath: FileCollection = task.classpath

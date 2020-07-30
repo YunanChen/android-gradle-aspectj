@@ -14,7 +14,7 @@ apply {
 }
 
 group = "com.archinamon"
-version = "3.3.11"
+version = "3.3.11-hotfixes"
 
 gradlePlugin {
     (plugins) {
